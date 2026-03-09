@@ -12,17 +12,17 @@
 请前往仓库 [Settings] -> [Secrets and variables] -> [Actions]
 依次添加以下加密变量：
 
-1. 账号密钥对 (数字后缀必须一一对应):
-   - EML_1 : 账号1 邮箱      |  PWD_1 : 账号1 密码
-   - EML_2 : 账号2 邮箱      |  PWD_2 : 账号2 密码
-   - EML_3 : 账号3 邮箱      |  PWD_3 : 账号3 密码
-      .          .                .         .
-      .          .                .         .
-      .          .                .         .
+| 变量类型 | 变量名 (Name) | 示例值 (Value) |
+| :--- | :--- | :--- |
 
-2. Telegram 通知 (可选):
-   - TG_TOKEN : Telegram Bot Token
-   - TG_ID    : 你的个人 Telegram Chat ID
+| **通知 ID（可选）** | TG_ID | 987654321 |
+
+| **通知 Token（可选）** | TG_TOKEN | 123456:ABC-DEF... |
+
+| **账号邮箱** | EML_1, EML_2, EML_3... | user@example.com |
+
+| **账号密码** | PWD_1, PWD_2, PWD_3... | your_password |
+
 ### 总结如下图
 <img width="1391" height="766" alt="image" src="https://github.com/user-attachments/assets/b4e2c333-1a8c-4e12-8164-f2b53a20f20f" />
 
