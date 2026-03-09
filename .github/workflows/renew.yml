@@ -1,17 +1,17 @@
 name: JustRunMy 多账号续期
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 支持手动点击运行
   schedule:
-    - cron: '0 1 */2 * *'
+    - cron: '0 1 */2 * *' # 每两天运行一次
 
 jobs:
   renew:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: false # 即使账号1失败，账号2也会继续运行
       matrix:
-        # 这里定义后缀，有几个号就写几个，例如 ['1', '2', '3']
+        # 这里定义后缀，有几个号就写几个，比如你有两个号就写 ['1', '2']
         suffix: ['1', '2']
 
     steps:
@@ -23,21 +23,55 @@ jobs:
         with:
           python-version: '3.11'
           
-      - name: 🛠️ 安装依赖
+      - name: 🛠️ 安装系统依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb x11-utils xdotool
+          sudo apt-get install -y \
+            xvfb \
+            x11-utils \
+            xdotool \
+            scrot \
+            fonts-noto-cjk
+            
+      - name: 🐍 安装 Python 依赖
+        run: |
           pip install seleniumbase aiohttp requests
           seleniumbase install chromedriver
           
-      - name: 🚀 运行重命名后的脚本
+      - name: 🚀 运行脚本 (带强力清理环境)
         env:
-          # 【映射核心】将你的特殊命名变量映射给脚本需要的变量名
+          # 核心映射：将你的 Secrets (EML_1, PWD_1等) 映射给脚本
           JUSTRUNMY_EMAIL: ${{ secrets[format('EML_{0}', matrix.suffix)] }}
           JUSTRUNMY_PASSWORD: ${{ secrets[format('PWD_{0}', matrix.suffix)] }}
+          # 对应你强调的 TG 变量名
           TG_BOT_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_ID }}
         run: |
+          # 1. 强力杀死可能残留的浏览器和驱动进程，确保每个矩阵任务环境纯净
+          pkill -f chrome || true
+          pkill -f chromium || true
+          pkill -f chromedriver || true
+          
+          # 2. 清理当前目录下的所有缓存文件夹和临时文件
+          rm -rf ~/.config/google-chrome
+          rm -rf /tmp/.com.google.Chrome.*
+          rm -f *.png  # 删除上次运行留下的截图
+          
+          # 3. 检查文件是否存在 (调试用)
+          ls -F
+          
+          # 4. 随机等待，避免多个账号同时撞上服务器检测
           sleep $((RANDOM % 30))
+          
+          # 5. 运行重命名后的脚本
           xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" \
             python reset_timer.py
+            
+      - name: 📸 上传调试截图
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # 截图文件夹会带上账号后缀，方便你区分哪个号出问题
+          name: debug-screenshots-acc-${{ matrix.suffix }}
+          path: "*.png"
+          retention-days: 3
