@@ -1,4 +1,4 @@
-# 🖥️ JustRunMy 自动续期多账号版
+# 🖥️ JustRunMy.App 自动续期 (全自动随机顺序版)
 
 > **本项目通过 GitHub Actions 实现 JustRunMy.app 服务的全自动续期。依托动态矩阵技术，实现“零侵入”封装，支持多账号无限扩展。**
 
@@ -23,11 +23,11 @@
 ### 总结如下图
 <img width="1391" height="766" alt="image" src="https://github.com/user-attachments/assets/b4e2c333-1a8c-4e12-8164-f2b53a20f20f" />
 
-
 【 🔄 运行逻辑 】
 - 🔍 智能扫描：自动解析 EML_N 系列变量，实现账号无限扩容。
 - 🎭 隔离执行：矩阵 (Matrix) 技术确保各账号独立运行，互不干扰。
 - 🖱️ 物理模拟：Xvfb 虚拟桌面 + 鼠标轨迹模拟，强力穿透 CF 验证。
+- 🎲 随机巡航：1-15 小时随机启动延迟，彻底打破固定运行规律。
 
 【 ⚠️ 调试与报错 】
 若 Actions 运行失败，请在当前任务页面的底端 [Artifacts] 区域
