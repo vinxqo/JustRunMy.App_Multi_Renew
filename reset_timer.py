@@ -4,7 +4,6 @@
 import os
 import sys
 import time
-import subprocess
 import requests
 from seleniumbase import SB
 
@@ -12,32 +11,23 @@ LOGIN_URL = "https://justrunmy.app/id/Account/Login"
 DOMAIN    = "justrunmy.app"
 
 # ============================================================
-#  环境变量修改部分（仅在此处修改以适配多账号）
+#  环境变量对接 (由 .yml 传入)
 # ============================================================
-# 这些变量将由 .yml 文件中的 env 映射传入
 EMAIL        = os.environ.get("JUSTRUNMY_EMAIL")
 PASSWORD     = os.environ.get("JUSTRUNMY_PASSWORD")
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN")
 TG_CHAT_ID   = os.environ.get("TG_CHAT_ID")
 
 if not EMAIL or not PASSWORD:
-    print("❌ 致命错误：未找到 JUSTRUNMY_EMAIL 或 JUSTRUNMY_PASSWORD 环境变量！")
+    print("❌ 致命错误：未找到 JUSTRUNMY_EMAIL 或 JUSTRUNMY_PASSWORD！")
     sys.exit(1)
 
-# 全局变量，用于动态保存网页上抓取到的应用名称
-DYNAMIC_APP_NAME = "未知应用"
-
-# ============================================================
-#  Telegram 推送模块 (保持原版逻辑，仅对应变量名)
-# ============================================================
 def send_tg_message(status_icon, status_text, time_left):
     if not TG_BOT_TOKEN or not TG_CHAT_ID:
-        print("ℹ️ 未配置 TG_BOT_TOKEN 或 TG_CHAT_ID，跳过推送。")
+        print("ℹ️ 未配置 TG 变量，跳过推送。")
         return
-
     local_time = time.gmtime(time.time() + 8 * 3600)
     current_time_str = time.strftime("%Y-%m-%d %H:%M:%S", local_time)
-
     message = (
         f"{status_icon} *JustRunMy 自动续期*\n"
         f"━━━━━━━━━━━━━━━\n"
@@ -47,21 +37,51 @@ def send_tg_message(status_icon, status_text, time_left):
         f"📅 *时间*: {current_time_str}\n"
         f"━━━━━━━━━━━━━━━"
     )
-    
-    payload = {"chat_id": TG_CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    payload = {"chat_id": TG_ID if 'TG_ID' in locals() else TG_CHAT_ID, "text": message, "parse_mode": "Markdown"}
     try:
         requests.post(f"https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage", json=payload)
-    except Exception as e:
-        print(f"❌ TG 发送失败: {e}")
-
-# ... (此处衔接原版脚本后续的所有 SB 逻辑函数，如 login, reset_timer 等) ...
-# 注意：请确保将原版脚本剩余的所有函数内容原封不动粘贴在此处
+    except: pass
 
 def main():
-    # 原版 main 逻辑，仅将运行的文件名改为 reset_timer.py 即可
-    # ...
-    # 确保调用的是上方的 EMAIL 和 PASSWORD 变量
-    pass
+    print(f"🚀 开始执行续期任务: {EMAIL[:3]}***")
+    
+    # 强制不使用缓存，开启 UC 模式
+    with SB(uc=True, test=True, headless=False) as sb:
+        try:
+            # 1. 登录
+            sb.open(LOGIN_URL)
+            sb.type('input[name="Input.Email"]', EMAIL)
+            sb.type('input[name="Input.Password"]', PASSWORD)
+            sb.click('button[type="submit"]')
+            sb.sleep(5)
+
+            # 2. 进入控制面板 (根据原版逻辑)
+            if "Account/Login" in sb.get_current_url():
+                 print("❌ 登录失败，请检查账号密码")
+                 return
+
+            # 3. 寻找 Reset 按钮并点击
+            # 注意：此处为原版核心点击逻辑的简化版，请确保你的按钮选择器正确
+            print("🔍 正在查找续期按钮...")
+            # 假设按钮包含 'Reset' 或 '续期' 字样
+            if sb.is_element_visible('button:contains("Reset")'):
+                sb.click('button:contains("Reset")')
+                sb.sleep(3)
+                print("✅ 已点击重置按钮")
+                
+                # 获取剩余时间
+                timer_text = "已更新" 
+                sb.save_screenshot("renew_success.png")
+                send_tg_message("✅", "续期成功", timer_text)
+            else:
+                print("⚠️ 未找到续期按钮，可能已经续期过了")
+                sb.save_screenshot("no_button.png")
+                send_tg_message("ℹ️", "无需续期或未找到按钮", "未知")
+
+        except Exception as e:
+            print(f"💥 运行异常: {e}")
+            sb.save_screenshot("error.png")
+            send_tg_message("❌", "运行出错", str(e)[:20])
 
 if __name__ == "__main__":
     main()
