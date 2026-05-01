@@ -5,6 +5,8 @@ on:
   schedule:
     # 每天北京时间 06:00 (UTC 22:00) 触发
     - cron: '0 22 * * *'
+permissions:
+  contents: write
 
 jobs:
   setup:
@@ -40,6 +42,15 @@ jobs:
         INDEX_ARRAY=$(echo "$ACCOUNTS" | jq -R . | jq -s -c .)
         echo "matrix=$INDEX_ARRAY" >> $GITHUB_OUTPUT
         echo "✅ 账号矩阵已构建：$INDEX_ARRAY"
+        
+    - name: Keepalive
+      run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          date -u > .keepalive
+          git add .keepalive
+          git commit -m "chore: keepalive $(date -u +%Y-%m-%d)"
+          git push
 
   renew:
     needs: setup
@@ -126,12 +137,3 @@ jobs:
         name: debug-acc-${{ matrix.account_index }}
         path: "*.png"
         retention-days: 3
-
-    - name: Keepalive
-      run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          date -u > .keepalive
-          git add .keepalive
-          git commit -m "chore: keepalive $(date -u +%Y-%m-%d)"
-          git push
